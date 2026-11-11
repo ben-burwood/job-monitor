@@ -1,29 +1,15 @@
 <template>
-    <span class="badge whitespace-nowrap" :class="badgeClass" :title="job.error">
+    <span class="badge whitespace-nowrap" :class="STATE_CLASSES[job.state].badge" :title="job.error">
         <span v-if="job.state === 'running'" class="loading loading-spinner loading-xs"></span>
         {{ job.label }}
     </span>
 </template>
 
 <script setup lang="ts">
-import type { JobRun, JobState } from "@/types/job";
-import { computed } from "vue";
+import type { JobRun } from "@/types/job";
+import { STATE_CLASSES } from "@/utils/state";
 
-const props = defineProps<{
+defineProps<{
     job: JobRun & { error?: string };
 }>();
-
-const BADGE_CLASSES: Record<JobState, string> = {
-    success: "badge-success",
-    failure: "badge-error",
-    error: "badge-warning",
-    warning: "badge-warning",
-    running: "badge-info",
-    cancelled: "badge-neutral",
-    skipped: "badge-ghost",
-    neutral: "badge-ghost",
-    none: "badge-ghost",
-};
-
-const badgeClass = computed(() => BADGE_CLASSES[props.job.state] ?? "badge-ghost");
 </script>

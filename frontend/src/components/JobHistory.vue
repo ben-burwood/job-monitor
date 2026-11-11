@@ -38,7 +38,7 @@
                             target="_blank"
                             rel="noopener"
                             class="size-3 rounded-sm"
-                            :class="DOT_CLASSES[run.state] ?? 'bg-base-300'"
+                            :class="STATE_CLASSES[run.state].dot"
                             :title="dotTitle(run)"
                         />
                     </div>
@@ -94,8 +94,9 @@
 <script setup lang="ts">
 import StatusBadge from "@/components/StatusBadge.vue";
 import { SERVER_URL } from "@/main";
-import type { JobHistory, JobRun, JobState } from "@/types/job";
+import type { JobHistory, JobRun } from "@/types/job";
 import { formatDuration, formatRelative, formatTimestamp, runtime } from "@/utils/format";
+import { STATE_CLASSES } from "@/utils/state";
 import { computed, onMounted, ref, watch } from "vue";
 
 const props = defineProps<{
@@ -104,33 +105,26 @@ const props = defineProps<{
     refreshToken: number;
 }>();
 
-const DOT_CLASSES: Record<JobState, string> = {
-    success: "bg-success",
-    failure: "bg-error",
-    error: "bg-warning",
-    warning: "bg-warning",
-    running: "bg-info animate-pulse",
-    cancelled: "bg-neutral",
-    skipped: "bg-base-300",
-    neutral: "bg-base-300",
-    none: "bg-base-300",
-};
-
 const history = ref<JobHistory | null>(null);
 const loading = ref(false);
 const error = ref<string | null>(null);
 
+// Only the latest request may update state, so a slow earlier response can't overwrite a newer one
+let latestRequest = 0;
+
 async function load(force = false) {
+    const request = ++latestRequest;
     loading.value = true;
     error.value = null;
     try {
         const resp = await fetch(`${SERVER_URL}/jobs/history?id=${encodeURIComponent(props.jobId)}${force ? "&refresh=true" : ""}`);
         if (!resp.ok) throw new Error((await resp.text()).trim() || `HTTP ${resp.status}`);
-        history.value = await resp.json();
+        const data: JobHistory = await resp.json();
+        if (request === latestRequest) history.value = data;
     } catch (e) {
-        error.value = e instanceof Error ? e.message : String(e);
+        if (request === latestRequest) error.value = e instanceof Error ? e.message : String(e);
     } finally {
-        loading.value = false;
+        if (request === latestRequest) loading.value = false;
     }
 }
 
@@ -152,6 +146,9 @@ const stats = computed(() => {
     };
 });
 
+// Start of today; only changes at local midnight, so days isn't rebuilt on every tick of now
+const today = computed(() => new Date(props.now).setHours(0, 0, 0, 0));
+
 // One column per local calendar day from the start of the history window to today, runs oldest first
 const days = computed(() => {
     if (!history.value) return [];
@@ -160,7 +157,7 @@ const days = computed(() => {
     const buckets: { key: string; label: string; runs: JobRun[] }[] = [];
     const cursor = new Date(history.value.since);
     cursor.setHours(0, 0, 0, 0);
-    while (cursor <= props.now) {
+    while (cursor.getTime() <= today.value) {
         buckets.push({ key: dayKey(cursor), label: cursor.toLocaleDateString("en-GB", { weekday: "short", day: "numeric" }), runs: [] });
         cursor.setDate(cursor.getDate() + 1);
     }
@@ -174,8 +171,7 @@ const days = computed(() => {
 
 function dotTitle(run: JobRun): string {
     const parts = [run.label];
-    if (run.startedAt) parts.push(formatTimestamp(new Date(run.startedAt)));
-    if (run.startedAt) parts.push(formatDuration(runtime(run, props.now)));
+    if (run.startedAt) parts.push(formatTimestamp(new Date(run.startedAt)), formatDuration(runtime(run, props.now)));
     if (run.title) parts.push(run.title);
     return parts.join(" · ");
 }

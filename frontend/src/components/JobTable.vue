@@ -6,13 +6,7 @@
                 <table class="table">
                     <thead>
                         <tr>
-                            <th class="w-0"></th>
-                            <th v-if="source === 'github'">Repo</th>
-                            <th>{{ source === "github" ? "Workflow" : "Job" }}</th>
-                            <th>Status</th>
-                            <th>Last run</th>
-                            <th>Runtime</th>
-                            <th></th>
+                            <th v-for="(column, i) in columns" :key="i" :class="{ 'w-0': i === 0 }">{{ column }}</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -69,7 +63,7 @@
                                 </td>
                             </tr>
                             <tr v-if="expanded.has(job.id)">
-                                <td :colspan="source === 'github' ? 7 : 6" class="bg-base-200 p-0">
+                                <td :colspan="columns.length" class="bg-base-200 p-0">
                                     <JobHistory :job-id="job.id" :now="now" :refresh-token="refreshToken" />
                                 </td>
                             </tr>
@@ -86,15 +80,20 @@ import JobHistory from "@/components/JobHistory.vue";
 import StatusBadge from "@/components/StatusBadge.vue";
 import type { JobSource, JobStatus } from "@/types/job";
 import { formatDuration, formatRelative, formatTimestamp, runtime } from "@/utils/format";
-import { reactive } from "vue";
+import { computed, reactive } from "vue";
 
-defineProps<{
+const props = defineProps<{
     title: string;
     source: JobSource;
     jobs: JobStatus[];
     now: Date;
     refreshToken: number; // bumped on force refresh so open histories refetch
 }>();
+
+// Header labels; the leading blank is the expand chevron and the trailing one the Open link
+const columns = computed(() =>
+    props.source === "github" ? ["", "Repo", "Workflow", "Status", "Last run", "Runtime", ""] : ["", "Job", "Status", "Last run", "Runtime", ""],
+);
 
 const expanded = reactive(new Set<string>());
 

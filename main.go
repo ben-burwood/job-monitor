@@ -27,7 +27,6 @@ func main() {
 	svc := jobs.NewService(context.Background(), cfg, cacheTTL)
 
 	mux := http.NewServeMux()
-	mux.HandleFunc("GET /api/jobs", api.AllJobsHandler(svc))
 	mux.HandleFunc("GET /api/jobs-sse", api.JobsHandlerSSE(svc))
 	mux.HandleFunc("GET /api/jobs/history", api.JobHistoryHandler(svc))
 

@@ -9,6 +9,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/credentials v1.21.0
 	github.com/aws/aws-sdk-go-v2/service/glue v1.175.1
 	github.com/aws/aws-sdk-go-v2/service/sts v1.52.0
+	golang.org/x/sync v0.25.0
 )
 
 require (

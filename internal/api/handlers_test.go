@@ -20,38 +20,34 @@ func newTestService(t *testing.T) *jobs.Service {
 	return jobs.NewService(context.Background(), cfg, time.Minute)
 }
 
-func TestAllJobsHandler(t *testing.T) {
-	rw := httptest.NewRecorder()
-	AllJobsHandler(newTestService(t))(rw, httptest.NewRequest("GET", "/api/jobs", nil))
-
-	if rw.Code != http.StatusOK {
-		t.Fatalf("expected status 200, got %d", rw.Code)
-	}
-	var statuses []jobs.JobStatus
-	if err := json.NewDecoder(rw.Body).Decode(&statuses); err != nil {
-		t.Fatalf("failed to decode response: %v", err)
-	}
-	if len(statuses) != 2 || statuses[0].Name != "one.yml" || statuses[1].Name != "two.yml" {
-		t.Fatalf("expected both jobs in config order, got %+v", statuses)
-	}
-	if statuses[0].State != jobs.StateError || statuses[0].Error != github.ErrTokenNotSet.Error() {
-		t.Errorf("expected token error, got %+v", statuses[0])
-	}
-}
-
 func TestJobsHandlerSSE(t *testing.T) {
 	rw := httptest.NewRecorder()
 	JobsHandlerSSE(newTestService(t))(rw, httptest.NewRequest("GET", "/api/jobs-sse", nil))
 
 	body := rw.Body.String()
-	if n := strings.Count(body, "data: {\"id\""); n != 2 {
-		t.Errorf("expected 2 job events, got %d in %q", n, body)
-	}
 	if !strings.HasSuffix(body, "event: done\ndata: {}\n\n") {
 		t.Errorf("expected trailing done event, got %q", body)
 	}
-}
 
+	names := map[string]bool{}
+	for _, line := range strings.Split(body, "\n") {
+		data, ok := strings.CutPrefix(line, "data: {\"id\"")
+		if !ok {
+			continue
+		}
+		var status jobs.JobStatus
+		if err := json.Unmarshal([]byte("{\"id\""+data), &status); err != nil {
+			t.Fatalf("failed to decode event %q: %v", line, err)
+		}
+		if status.State != jobs.StateError || status.Error != github.ErrTokenNotSet.Error() {
+			t.Errorf("expected token error, got %+v", status)
+		}
+		names[status.Name] = true
+	}
+	if len(names) != 2 || !names["one.yml"] || !names["two.yml"] {
+		t.Errorf("expected one event per job, got %v", names)
+	}
+}
 func TestJobHistoryHandler(t *testing.T) {
 	cases := []struct {
 		name     string
