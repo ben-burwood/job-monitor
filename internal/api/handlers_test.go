@@ -51,3 +51,24 @@ func TestJobsHandlerSSE(t *testing.T) {
 		t.Errorf("expected trailing done event, got %q", body)
 	}
 }
+
+func TestJobHistoryHandler(t *testing.T) {
+	cases := []struct {
+		name     string
+		url      string
+		wantCode int
+		wantBody string
+	}{
+		{"unknown job", "/api/jobs/history?id=github:a/b/missing.yml", http.StatusNotFound, "unknown job"},
+		{"fetch error", "/api/jobs/history?id=github:a/b/one.yml", http.StatusBadGateway, github.ErrTokenNotSet.Error()},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			rw := httptest.NewRecorder()
+			JobHistoryHandler(newTestService(t))(rw, httptest.NewRequest("GET", c.url, nil))
+			if rw.Code != c.wantCode || !strings.Contains(rw.Body.String(), c.wantBody) {
+				t.Errorf("got %d %q, want %d containing %q", rw.Code, rw.Body.String(), c.wantCode, c.wantBody)
+			}
+		})
+	}
+}

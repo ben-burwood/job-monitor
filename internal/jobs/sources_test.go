@@ -27,7 +27,7 @@ func TestApplyGithubRun(t *testing.T) {
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			var s JobStatus
+			var s Run
 			applyGithubRun(&s, &c.run, t0.Add(5*time.Minute))
 			if s.State != c.wantState || s.Label != c.wantLabel || s.Duration != c.wantDuration {
 				t.Errorf("got (%s, %q, %d), want (%s, %q, %d)", s.State, s.Label, s.Duration, c.wantState, c.wantLabel, c.wantDuration)
@@ -51,7 +51,7 @@ func TestApplyGlueRun(t *testing.T) {
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			var s JobStatus
+			var s Run
 			applyGlueRun(&s, &c.run, t0.Add(5*time.Minute))
 			if s.State != c.wantState || s.Label != c.wantLabel || s.Duration != c.wantDuration {
 				t.Errorf("got (%s, %q, %d), want (%s, %q, %d)", s.State, s.Label, s.Duration, c.wantState, c.wantLabel, c.wantDuration)

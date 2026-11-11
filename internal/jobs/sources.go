@@ -52,14 +52,34 @@ func fetchGithub(ctx context.Context, gh *github.Client, status JobStatus) *JobS
 	if run == nil {
 		return status.withNoRuns()
 	}
-	applyGithubRun(&status, run, time.Now())
+	applyGithubRun(&status.Run, run, time.Now())
 	return &status
 }
 
-func applyGithubRun(status *JobStatus, run *github.WorkflowRun, now time.Time) {
+func fetchGithubHistory(ctx context.Context, gh *github.Client, repo, workflow string, since time.Time) ([]Run, error) {
+	branch, err := gh.GetDefaultBranch(ctx, repo)
+	if err != nil {
+		return nil, err
+	}
+	runs, err := gh.ListRuns(ctx, repo, workflow, branch, since)
+	if err != nil {
+		return nil, err
+	}
+	now := time.Now()
+	history := make([]Run, len(runs))
+	for i := range runs {
+		applyGithubRun(&history[i], &runs[i], now)
+	}
+	return history, nil
+}
+
+func applyGithubRun(status *Run, run *github.WorkflowRun, now time.Time) {
 	started := run.RunStartedAt
 	status.Started = &started
 	status.URL = run.HTMLURL
+	status.Number = run.RunNumber
+	status.Title = run.DisplayTitle
+	status.Trigger = run.Event
 
 	if run.Status != "completed" {
 		status.State = StateRunning
@@ -85,12 +105,28 @@ func fetchGlue(ctx context.Context, gl *glue.Client, status JobStatus) *JobStatu
 		return status.withNoRuns()
 	}
 	status.URL = gl.ConsoleURL(status.Name, aws.ToString(run.Id))
-	applyGlueRun(&status, run, time.Now())
+	applyGlueRun(&status.Run, run, time.Now())
 	return &status
 }
 
-func applyGlueRun(status *JobStatus, run *types.JobRun, now time.Time) {
+func fetchGlueHistory(ctx context.Context, gl *glue.Client, jobName string, since time.Time) ([]Run, error) {
+	runs, err := gl.ListRuns(ctx, jobName, since)
+	if err != nil {
+		return nil, err
+	}
+	now := time.Now()
+	history := make([]Run, len(runs))
+	for i := range runs {
+		history[i].URL = gl.ConsoleURL(jobName, aws.ToString(runs[i].Id))
+		applyGlueRun(&history[i], &runs[i], now)
+	}
+	return history, nil
+}
+
+func applyGlueRun(status *Run, run *types.JobRun, now time.Time) {
 	status.Started = run.StartedOn
+	status.Trigger = aws.ToString(run.TriggerName)
+	status.Message = aws.ToString(run.ErrorMessage)
 
 	if s, ok := glueTerminalStates[run.JobRunState]; ok {
 		status.State, status.Label = s.state, s.label

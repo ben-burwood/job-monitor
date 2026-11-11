@@ -6,11 +6,11 @@
 </template>
 
 <script setup lang="ts">
-import type { JobState, JobStatus } from "@/types/job";
+import type { JobRun, JobState } from "@/types/job";
 import { computed } from "vue";
 
 const props = defineProps<{
-    job: JobStatus;
+    job: JobRun & { error?: string };
 }>();
 
 const BADGE_CLASSES: Record<JobState, string> = {

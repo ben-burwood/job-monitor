@@ -29,6 +29,7 @@ func main() {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /api/jobs", api.AllJobsHandler(svc))
 	mux.HandleFunc("GET /api/jobs-sse", api.JobsHandlerSSE(svc))
+	mux.HandleFunc("GET /api/jobs/history", api.JobHistoryHandler(svc))
 
 	// Serve Static Frontend
 	mux.Handle("/", http.FileServer(http.Dir("./frontend/dist")))

@@ -68,3 +68,22 @@ func (c *Client) GetLatestRun(ctx context.Context, jobName string) (*types.JobRu
 func (c *Client) ConsoleURL(jobName, runID string) string {
 	return fmt.Sprintf("https://%[1]s.console.aws.amazon.com/gluestudio/home?region=%[1]s#/job/%[2]s/run/%[3]s", c.region, jobName, runID)
 }
+
+// ListRuns returns the runs of the job started at or after since, newest first
+func (c *Client) ListRuns(ctx context.Context, jobName string, since time.Time) ([]types.JobRun, error) {
+	var runs []types.JobRun
+	paginator := glue.NewGetJobRunsPaginator(c.glue, &glue.GetJobRunsInput{JobName: aws.String(jobName), MaxResults: aws.Int32(200)})
+	for paginator.HasMorePages() {
+		resp, err := paginator.NextPage(ctx)
+		if err != nil {
+			return nil, err
+		}
+		for _, run := range resp.JobRuns {
+			if run.StartedOn != nil && run.StartedOn.Before(since) {
+				return runs, nil // runs are returned newest first, so the rest are older
+			}
+			runs = append(runs, run)
+		}
+	}
+	return runs, nil
+}

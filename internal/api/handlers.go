@@ -29,6 +29,27 @@ func AllJobsHandler(svc *jobs.Service) http.HandlerFunc {
 	}
 }
 
+// JobHistoryHandler handles requests for a single job's run history (?id=<job id>), newest first
+func JobHistoryHandler(svc *jobs.Service) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		job, ok := svc.Job(r.URL.Query().Get("id"))
+		if !ok {
+			http.Error(w, "unknown job", http.StatusNotFound)
+			return
+		}
+		force := r.URL.Query().Get("refresh") == "true"
+
+		history, err := svc.History(r.Context(), job, force)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadGateway)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(history)
+	}
+}
+
 // JobsHandlerSSE handles Server Sent Events (SSE) Endpoint, sending each job's status as it resolves.
 func JobsHandlerSSE(svc *jobs.Service) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {

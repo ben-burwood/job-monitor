@@ -35,8 +35,8 @@
         <!-- BODY -->
         <div class="p-5 flex-1 bg-base-200">
             <div class="max-w-6xl mx-auto flex flex-col gap-6" v-if="jobs.length">
-                <JobTable v-if="githubJobs.length" title="GitHub Actions" source="github" :jobs="githubJobs" :now="now" />
-                <JobTable v-if="glueJobs.length" title="AWS Glue" source="glue" :jobs="glueJobs" :now="now" />
+                <JobTable v-if="githubJobs.length" title="GitHub Actions" source="github" :jobs="githubJobs" :now="now" :refresh-token="refreshToken" />
+                <JobTable v-if="glueJobs.length" title="AWS Glue" source="glue" :jobs="glueJobs" :now="now" :refresh-token="refreshToken" />
             </div>
             <div v-else-if="loading" class="text-center mt-10">
                 <span class="loading loading-dots loading-xl"></span>
@@ -74,7 +74,11 @@ const glueJobs = computed(() => bySource("glue"));
 // Server Sent Events Implementation - existing rows stay visible and are replaced in place as fresh statuses arrive
 let eventSource: EventSource | null = null;
 
+// Bumped on force refresh so expanded run histories refetch too
+const refreshToken = ref(0);
+
 const loadJobs = (force = false) => {
+    if (force) refreshToken.value++;
     if (eventSource) eventSource.close();
     loading.value = true;
     failed.value = false;

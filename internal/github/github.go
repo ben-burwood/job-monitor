@@ -9,11 +9,15 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"strconv"
 	"time"
 )
 
 const (
 	apiBaseURL = "https://api.github.com"
+
+	runsPageSize = 100
+	maxRunsPages = 10 // caps ListRuns at 1000 runs
 
 	// TokenEnvVar is the environment variable holding a PAT with `Actions: read` (and `repo` for private targets)
 	TokenEnvVar = "GITHUB_TOKEN"
@@ -23,6 +27,9 @@ var ErrTokenNotSet = errors.New(TokenEnvVar + " not set")
 
 // WorkflowRun is the subset of a GitHub Actions workflow run used by the dashboard
 type WorkflowRun struct {
+	RunNumber    int       `json:"run_number"`
+	DisplayTitle string    `json:"display_title"`
+	Event        string    `json:"event"`
 	Status       string    `json:"status"`
 	Conclusion   string    `json:"conclusion"`
 	RunStartedAt time.Time `json:"run_started_at"`
@@ -95,4 +102,29 @@ func (c *Client) GetLatestRun(ctx context.Context, repo, workflow, branch string
 		return nil, nil
 	}
 	return &data.WorkflowRuns[0], nil
+}
+
+// ListRuns returns the runs of the workflow on the branch created at or after since, newest first
+func (c *Client) ListRuns(ctx context.Context, repo, workflow, branch string, since time.Time) ([]WorkflowRun, error) {
+	var runs []WorkflowRun
+	path := fmt.Sprintf("/repos/%s/actions/workflows/%s/runs", repo, url.PathEscape(workflow))
+	for page := 1; page <= maxRunsPages; page++ {
+		var data struct {
+			WorkflowRuns []WorkflowRun `json:"workflow_runs"`
+		}
+		params := url.Values{
+			"branch":   {branch},
+			"created":  {">=" + since.UTC().Format(time.RFC3339)},
+			"per_page": {strconv.Itoa(runsPageSize)},
+			"page":     {strconv.Itoa(page)},
+		}
+		if err := c.get(ctx, path, params, &data); err != nil {
+			return nil, err
+		}
+		runs = append(runs, data.WorkflowRuns...)
+		if len(data.WorkflowRuns) < runsPageSize {
+			break
+		}
+	}
+	return runs, nil
 }
