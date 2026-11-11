@@ -1,0 +1,10 @@
+name: Dependabot Auto-Merge
+
+on: pull_request
+
+jobs:
+  dependabot:
+    uses: ben-burwood/.actions/.github/workflows/dependabot-auto-merge.yml@main
+    permissions:
+      contents: write
+      pull-requests: write
