@@ -3,12 +3,12 @@ module job-monitor
 go 1.27.0
 
 require (
-	github.com/BurntSushi/toml v1.6.0
 	github.com/aws/aws-sdk-go-v2 v1.48.0
 	github.com/aws/aws-sdk-go-v2/config v1.33.18
 	github.com/aws/aws-sdk-go-v2/credentials v1.21.0
 	github.com/aws/aws-sdk-go-v2/service/glue v1.175.1
 	github.com/aws/aws-sdk-go-v2/service/sts v1.52.0
+	go.yaml.in/yaml/v3 v3.0.6
 	golang.org/x/sync v0.25.0
 )
 

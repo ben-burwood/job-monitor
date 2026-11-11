@@ -7,7 +7,7 @@ services:
       - GITHUB_TOKEN
       - AWS_GLUE_OBSERVE_ROLE_ARN
       - AWS_REGION=${AWS_REGION:-eu-west-2}
-      - JOB_MONITOR_CONFIG_PATH=/config/config.toml
+      - JOB_MONITOR_CONFIG_PATH=/config/config.yaml
     volumes:
       - ./config:/config:ro
       - ~/.aws:/root/.aws:ro

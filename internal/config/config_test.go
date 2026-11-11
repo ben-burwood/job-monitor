@@ -10,12 +10,12 @@ import (
 
 func TestParseConfig(t *testing.T) {
 	cfg, err := parseAndValidateConfigBytes([]byte(`
-[[github]]
-repo = "streetwave/gh-job"
-workflow = "action.yml"
+github:
+  - repo: streetwave/gh-job
+    workflow: action.yml
 
-[[glue]]
-name = "glue-job"
+glue:
+  - name: glue-job
 `))
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -31,10 +31,10 @@ name = "glue-job"
 
 func TestParseConfigInvalid(t *testing.T) {
 	cases := map[string]string{
-		"repo without owner": "[[github]]\nrepo = \"gh-job\"\nworkflow = \"a.yml\"",
-		"missing workflow":   "[[github]]\nrepo = \"a/b\"",
-		"missing glue name":  "[[glue]]\nname = \"\"",
-		"github not array":   "github = \"a/b\"",
+		"repo without owner": "github:\n  - repo: gh-job\n    workflow: a.yml",
+		"missing workflow":   "github:\n  - repo: a/b",
+		"missing glue name":  "glue:\n  - name: \"\"",
+		"github not array":   "github: a/b",
 	}
 	for name, input := range cases {
 		t.Run(name, func(t *testing.T) {
@@ -52,8 +52,8 @@ func TestParseConfigEmpty(t *testing.T) {
 }
 
 func TestLoadConfigFromPath(t *testing.T) {
-	path := filepath.Join(t.TempDir(), "jobs.toml")
-	if err := os.WriteFile(path, []byte("[[glue]]\nname = \"job\""), 0o600); err != nil {
+	path := filepath.Join(t.TempDir(), "jobs.yaml")
+	if err := os.WriteFile(path, []byte("glue:\n  - name: job"), 0o600); err != nil {
 		t.Fatal(err)
 	}
 	cfg, err := LoadConfig(path)
@@ -67,7 +67,7 @@ func TestLoadConfigFromPath(t *testing.T) {
 
 func TestLoadConfigNotFound(t *testing.T) {
 	t.Chdir(t.TempDir())
-	if _, err := LoadConfig("does-not-exist.toml"); !errors.Is(err, ErrConfigFileNotFound) {
+	if _, err := LoadConfig("does-not-exist.yaml"); !errors.Is(err, ErrConfigFileNotFound) {
 		t.Errorf("got %v, want %v", err, ErrConfigFileNotFound)
 	}
 }

@@ -7,13 +7,13 @@ import (
 	"os"
 	"strings"
 
-	"github.com/BurntSushi/toml"
+	"go.yaml.in/yaml/v3"
 )
 
 const (
 	// DefaultConfigurationFilePath is the default path that will be used to search for the configuration file
 	// if a custom path isn't configured through the JOB_MONITOR_CONFIG_PATH environment variable
-	DefaultConfigurationFilePath = "config/config.toml"
+	DefaultConfigurationFilePath = "config/config.yaml"
 )
 
 var (
@@ -26,18 +26,18 @@ var (
 
 // GithubJob is a GitHub Actions workflow to track, run against the repository's default branch
 type GithubJob struct {
-	Repo     string `toml:"repo"`     // owner/name
-	Workflow string `toml:"workflow"` // workflow filename in .github/workflows/
+	Repo     string `yaml:"repo"`     // owner/name
+	Workflow string `yaml:"workflow"` // workflow filename in .github/workflows/
 }
 
 // GlueJob is an AWS Glue job to track
 type GlueJob struct {
-	Name string `toml:"name"`
+	Name string `yaml:"name"`
 }
 
 type Config struct {
-	Github []GithubJob `toml:"github"`
-	Glue   []GlueJob   `toml:"glue"`
+	Github []GithubJob `yaml:"github"`
+	Glue   []GlueJob   `yaml:"glue"`
 }
 
 // LoadConfig loads the configuration from the specified path, falling back to DefaultConfigurationFilePath
@@ -59,10 +59,10 @@ func LoadConfig(configPath string) (*Config, error) {
 	return nil, ErrConfigFileNotFound
 }
 
-// parseAndValidateConfigBytes parses a TOML configuration into a Config struct and validates its parameters
+// parseAndValidateConfigBytes parses a YAML configuration into a Config struct and validates its parameters
 func parseAndValidateConfigBytes(data []byte) (*Config, error) {
 	var config Config
-	if err := toml.Unmarshal(data, &config); err != nil {
+	if err := yaml.Unmarshal(data, &config); err != nil {
 		return nil, fmt.Errorf("error parsing config: %w", err)
 	}
 

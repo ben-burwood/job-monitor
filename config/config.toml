@@ -1,6 +1,0 @@
-[[github]]
-repo = "owner/respository"
-workflow = "action.yml"
-
-[[glue]]
-name = "glue-job"
