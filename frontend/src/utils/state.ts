@@ -4,7 +4,7 @@ import type { JobState } from "@/types/job";
 export const STATE_CLASSES: Record<JobState, { badge: string; dot: string }> = {
   success: { badge: "badge-success", dot: "bg-success" },
   failure: { badge: "badge-error", dot: "bg-error" },
-  error: { badge: "badge-warning", dot: "bg-warning" },
+  error: { badge: "badge-error", dot: "bg-error" },
   warning: { badge: "badge-warning", dot: "bg-warning" },
   running: { badge: "badge-info", dot: "bg-info animate-pulse" },
   cancelled: { badge: "badge-neutral", dot: "bg-neutral" },

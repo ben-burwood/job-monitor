@@ -4,7 +4,7 @@
         <div class="navbar bg-base-100 shadow-sm">
             <div class="flex items-center gap-4 lg:ml-20">
                 <img src="/logo.svg" alt="Job Dashboard Logo" class="h-10" />
-                <span class="text-2xl font-bold">Job Dashboard</span>
+                <span class="text-2xl font-bold">Job Monitor</span>
             </div>
             <div class="flex-1"></div>
             <button
@@ -26,8 +26,10 @@
                     stroke-linejoin="round"
                     :class="{ 'animate-spin': loading }"
                 >
-                    <path d="M21 12a9 9 0 1 1-2.64-6.36" />
-                    <path d="M21 3v6h-6" />
+                    <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8" />
+                    <path d="M21 3v5h-5" />
+                    <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16" />
+                    <path d="M8 16H3v5" />
                 </svg>
             </button>
         </div>
@@ -46,15 +48,22 @@
         </div>
 
         <!-- FOOTER -->
-        <footer class="p-4 bg-base-300 flex items-center justify-end">
-            <ThemeSwitcher />
+        <footer class="border-t border-base-300 bg-base-100">
+            <div class="px-4 py-6 text-sm text-base-content/70 text-center">
+                Powered by
+                <a href="https://github.com/ben-burwood/job-monitor" target="_blank" class="font-medium text-emerald-800 hover:text-emerald-600">Job Monitor</a>
+            </div>
         </footer>
+
+        <Settings @refresh="loadJobs(true)" />
+        <Social />
     </div>
 </template>
 
 <script setup lang="ts">
 import JobTable from "@/components/JobTable.vue";
-import ThemeSwitcher from "@/components/ThemeSwitcher.vue";
+import Settings from "@/components/Settings.vue";
+import Social from "@/components/Social.vue";
 import { SERVER_URL } from "@/main";
 import type { JobSource, JobStatus } from "@/types/job";
 import { computed, onMounted, onUnmounted, ref } from "vue";
