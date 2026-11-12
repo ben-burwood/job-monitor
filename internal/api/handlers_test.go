@@ -57,6 +57,9 @@ func TestJobHistoryHandler(t *testing.T) {
 	}{
 		{"unknown job", "/api/jobs/history?id=github:a/b/missing.yml", http.StatusNotFound, "unknown job"},
 		{"fetch error", "/api/jobs/history?id=github:a/b/one.yml", http.StatusBadGateway, github.ErrTokenNotSet.Error()},
+		{"fetch error with days", "/api/jobs/history?id=github:a/b/one.yml&days=28", http.StatusBadGateway, github.ErrTokenNotSet.Error()},
+		{"unsupported days", "/api/jobs/history?id=github:a/b/one.yml&days=3", http.StatusBadRequest, "days must be one of"},
+		{"invalid days", "/api/jobs/history?id=github:a/b/one.yml&days=abc", http.StatusBadRequest, "days must be one of"},
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {

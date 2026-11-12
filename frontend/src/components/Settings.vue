@@ -6,6 +6,11 @@
             <!-- divider -->
             <div class="h-5 w-px bg-base-300" />
 
+            <HistoryDays />
+
+            <!-- divider -->
+            <div class="h-5 w-px bg-base-300" />
+
             <!-- theme toggle -->
             <div class="relative group">
                 <button
@@ -66,6 +71,7 @@
 <script setup lang="ts">
 import { themeChange } from "theme-change";
 import { onMounted, onUnmounted, ref } from "vue";
+import HistoryDays from "./HistoryDays.vue";
 import RefreshInterval from "./RefreshInterval.vue";
 
 defineEmits<{ refresh: [] }>();

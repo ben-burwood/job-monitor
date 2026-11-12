@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"slices"
+	"strconv"
 	"sync"
 
 	"job-monitor/internal/jobs"
@@ -37,7 +39,7 @@ func JobsHandlerSSE(svc *jobs.Service) http.HandlerFunc {
 	}
 }
 
-// JobHistoryHandler handles requests for a single job's run history (?id=<job id>), newest first
+// JobHistoryHandler handles requests for a single job's run history (?id=<job id>&days=<n>), newest first
 func JobHistoryHandler(svc *jobs.Service) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		job, ok := svc.Job(r.URL.Query().Get("id"))
@@ -45,9 +47,18 @@ func JobHistoryHandler(svc *jobs.Service) http.HandlerFunc {
 			http.Error(w, "unknown job", http.StatusNotFound)
 			return
 		}
+		days := jobs.DefaultHistoryDays
+		if d := r.URL.Query().Get("days"); d != "" {
+			n, err := strconv.Atoi(d)
+			if err != nil || !slices.Contains(jobs.HistoryDays, n) {
+				http.Error(w, fmt.Sprintf("days must be one of %v", jobs.HistoryDays), http.StatusBadRequest)
+				return
+			}
+			days = n
+		}
 		force := r.URL.Query().Get("refresh") == "true"
 
-		history, err := svc.History(r.Context(), job, force)
+		history, err := svc.History(r.Context(), job, days, force)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadGateway)
 			return

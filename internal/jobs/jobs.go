@@ -2,6 +2,7 @@ package jobs
 
 import (
 	"context"
+	"strconv"
 	"time"
 
 	"job-monitor/internal/config"
@@ -31,8 +32,11 @@ const (
 	StateError     State = "error" // the status could not be fetched
 )
 
-// HistoryWindow is how far back a job's run history reaches
-const HistoryWindow = 7 * 24 * time.Hour
+// HistoryDays are the selectable lengths of a job's run history, in days
+var HistoryDays = []int{1, 7, 14, 28}
+
+// DefaultHistoryDays is the history length used when none is requested
+const DefaultHistoryDays = 7
 
 // Run is a single run of a job, normalised across sources
 type Run struct {
@@ -62,7 +66,7 @@ type JobStatus struct {
 	Fetched time.Time `json:"fetchedAt"`
 }
 
-// History is a job's runs within HistoryWindow, newest first
+// History is a job's runs since Since, newest first
 type History struct {
 	ID      string    `json:"id"`
 	Since   time.Time `json:"since"`
@@ -165,11 +169,11 @@ func (s *Service) Status(ctx context.Context, job Job, force bool) *JobStatus {
 	return status
 }
 
-// History returns the job's runs within HistoryWindow, served from cache unless expired or force is set.
+// History returns the job's runs within the last days, served from cache unless expired or force is set.
 // Fetch errors are returned rather than cached.
-func (s *Service) History(ctx context.Context, job Job, force bool) (*History, error) {
-	return s.histories.get(ctx, job.ID, force, func(ctx context.Context) (*History, error) {
-		since := time.Now().UTC().Add(-HistoryWindow)
+func (s *Service) History(ctx context.Context, job Job, days int, force bool) (*History, error) {
+	return s.histories.get(ctx, job.ID+"@"+strconv.Itoa(days), force, func(ctx context.Context) (*History, error) {
+		since := time.Now().UTC().AddDate(0, 0, -days)
 		runs, err := job.src.history(ctx, since)
 		if err != nil {
 			return nil, err

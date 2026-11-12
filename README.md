@@ -22,7 +22,7 @@ Statuses are cached for 60 seconds; the refresh button in the header bypasses th
 ## API
 
 - `GET /api/jobs-sse` — Server Sent Events stream, one event per job as it resolves, then a `done` event
-- `GET /api/jobs/history?id=<job id>` — JSON run history of a single job over the last 7 days, newest first
+- `GET /api/jobs/history?id=<job id>&days=<1|7|14|28>` — JSON run history of a single job over the last `days` days (default 7), newest first
 
 Both accept `?refresh=true` to bypass the cache.
 

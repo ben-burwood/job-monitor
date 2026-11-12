@@ -8,7 +8,7 @@
             <!-- SUMMARY -->
             <div class="flex flex-wrap items-baseline gap-x-8 gap-y-2 text-sm">
                 <div>
-                    <span class="opacity-60">Runs (7d)</span> <span class="font-semibold">{{ history.runs.length }}</span>
+                    <span class="opacity-60">Runs ({{ historyDays }}d)</span> <span class="font-semibold">{{ history.runs.length }}</span>
                 </div>
                 <div>
                     <span class="opacity-60">Success rate</span>
@@ -86,7 +86,7 @@
                     </tbody>
                 </table>
             </div>
-            <div v-else class="text-sm italic opacity-60">No runs in the last 7 days.</div>
+            <div v-else class="text-sm italic opacity-60">No runs in the last {{ historyDays === 1 ? "day" : `${historyDays} days` }}.</div>
         </template>
     </div>
 </template>
@@ -96,6 +96,7 @@ import StatusBadge from "@/components/StatusBadge.vue";
 import { SERVER_URL } from "@/main";
 import type { JobHistory, JobRun } from "@/types/job";
 import { formatDuration, formatRelative, formatTimestamp, runtime } from "@/utils/format";
+import { historyDays } from "@/utils/historyDays";
 import { STATE_CLASSES } from "@/utils/state";
 import { computed, onMounted, ref, watch } from "vue";
 
@@ -117,7 +118,9 @@ async function load(force = false) {
     loading.value = true;
     error.value = null;
     try {
-        const resp = await fetch(`${SERVER_URL}/jobs/history?id=${encodeURIComponent(props.jobId)}${force ? "&refresh=true" : ""}`);
+        const resp = await fetch(
+            `${SERVER_URL}/jobs/history?id=${encodeURIComponent(props.jobId)}&days=${historyDays.value}${force ? "&refresh=true" : ""}`,
+        );
         if (!resp.ok) throw new Error((await resp.text()).trim() || `HTTP ${resp.status}`);
         const data: JobHistory = await resp.json();
         if (request === latestRequest) history.value = data;
@@ -133,6 +136,7 @@ watch(
     () => props.refreshToken,
     () => load(true),
 );
+watch(historyDays, () => load());
 
 const stats = computed(() => {
     const runs = history.value?.runs ?? [];
@@ -149,6 +153,9 @@ const stats = computed(() => {
 // Start of today; only changes at local midnight, so days isn't rebuilt on every tick of now
 const today = computed(() => new Date(props.now).setHours(0, 0, 0, 0));
 
+// Weekday labels don't fit once there are more than a couple of weeks of columns
+const dayLabelFormat = computed<Intl.DateTimeFormatOptions>(() => (historyDays.value > 14 ? { day: "numeric" } : { weekday: "short", day: "numeric" }));
+
 // One column per local calendar day from the start of the history window to today, runs oldest first
 const days = computed(() => {
     if (!history.value) return [];
@@ -158,7 +165,7 @@ const days = computed(() => {
     const cursor = new Date(history.value.since);
     cursor.setHours(0, 0, 0, 0);
     while (cursor.getTime() <= today.value) {
-        buckets.push({ key: dayKey(cursor), label: cursor.toLocaleDateString("en-GB", { weekday: "short", day: "numeric" }), runs: [] });
+        buckets.push({ key: dayKey(cursor), label: cursor.toLocaleDateString("en-GB", dayLabelFormat.value), runs: [] });
         cursor.setDate(cursor.getDate() + 1);
     }
 
