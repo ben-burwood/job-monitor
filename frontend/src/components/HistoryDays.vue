@@ -8,21 +8,7 @@
             title="Run history length"
             @click="showMenu = !showMenu"
         >
-            <svg
-                class="h-3.5 w-3.5 text-base-content/60"
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-            >
-                <rect x="3" y="4" width="18" height="18" rx="2" />
-                <path d="M16 2v4" />
-                <path d="M8 2v4" />
-                <path d="M3 10h18" />
-            </svg>
+            <IconCalendar class="h-3.5 w-3.5 text-base-content/60" />
             <span class="text-xs font-medium">{{ historyDays }}d</span>
         </button>
 
@@ -45,6 +31,7 @@
 <script setup lang="ts">
 import { HISTORY_DAYS, historyDays } from "@/utils/historyDays";
 import { onMounted, onUnmounted, ref } from "vue";
+import IconCalendar from "~icons/lucide/calendar";
 
 const root = ref<HTMLElement | null>(null);
 const showMenu = ref(false);
